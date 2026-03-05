@@ -47,17 +47,76 @@ def r_squared(a, b):
     return 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
 
 
-def add_peak_annotation(fig, x, y, color, row):
-    idx = int(np.argmax(np.abs(y)))
-    fig.add_annotation(
-        x=x[idx], y=y[idx],
-        text=f"<b>{y[idx]:.3g}</b><br>@ {x[idx]:.4g}",
-        showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=1.5,
-        arrowcolor=color, font=dict(size=10, color=color),
-        bgcolor="white", bordercolor=color, borderwidth=1,
-        ax=35, ay=-35,
-        row=row, col=1,
-    )
+def _get_peak(x_arr, y_arr):
+    idx = int(np.argmax(np.abs(y_arr)))
+    return float(x_arr[idx]), float(y_arr[idx])
+
+
+def _place_peak_annotations(fig, peaks_per_row):
+    """
+    Greedy collision avoidance for peak annotation boxes.
+
+    peaks_per_row : {row_int: [(x, y, color), ...]}
+    Each candidate (ax, ay) offset is chosen to maximise minimum
+    separation from already-placed label centres in pixel space.
+    """
+    CANDIDATES = [
+        ( 45, -45), (-45, -45),
+        ( 45, -90), (-45, -90),
+        ( 90, -45), (-90, -45),
+        ( 90, -90), (-90, -90),
+        (  0, -100),(130, -45),
+        (-130, -45),(  0,  55),
+    ]
+    BOX_W, BOX_H = 92, 44      # estimated label bounding box (px)
+    PLOT_W, PLOT_H = 900, 320  # approx subplot pixel dimensions
+
+    for row, peaks in peaks_per_row.items():
+        if not peaks:
+            continue
+
+        xs = [p[0] for p in peaks]
+        ys = [p[1] for p in peaks]
+        x_span = max(max(xs) - min(xs), 1e-12)
+        y_span = max(max(ys) - min(ys), 1e-12)
+        x0, y0 = min(xs), min(ys)
+
+        def to_px(xd, yd):
+            return (xd - x0) / x_span * PLOT_W, (yd - y0) / y_span * PLOT_H
+
+        placed = []   # label centre positions (px)
+
+        for xd, yd, color in sorted(peaks, key=lambda p: p[0]):
+            px, py = to_px(xd, yd)
+            best_ax, best_ay = CANDIDATES[0]
+            best_score = float("-inf")
+
+            for ax, ay in CANDIDATES:
+                lx, ly = px + ax, py + ay
+                if not placed:
+                    best_ax, best_ay = ax, ay
+                    break
+                score = float("inf")
+                for plx, ply in placed:
+                    dx, dy = abs(lx - plx), abs(ly - ply)
+                    s = (-(BOX_W - dx) * (BOX_H - dy)
+                         if dx < BOX_W and dy < BOX_H
+                         else min(dx - BOX_W, dy - BOX_H))
+                    score = min(score, s)
+                if score > best_score:
+                    best_score = score
+                    best_ax, best_ay = ax, ay
+
+            placed.append((px + best_ax, py + best_ay))
+            fig.add_annotation(
+                x=xd, y=yd,
+                text=f"<b>{yd:.3g}</b><br>@ {xd:.4g}",
+                showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=1.5,
+                arrowcolor=color, font=dict(size=10, color=color),
+                bgcolor="white", bordercolor=color, borderwidth=1,
+                ax=best_ax, ay=best_ay,
+                row=row, col=1,
+            )
 
 
 COLORS = [
@@ -237,13 +296,15 @@ fig.add_trace(
                line=dict(color="royalblue", width=2.5)),
     row=1, col=1,
 )
-if show_peaks:
-    add_peak_annotation(fig, fea_x, fea_y, "royalblue", row=1)
 
 # ── Per-dataset loop ───────────────────────────────────────────────────────────
 
 metrics_rows = []
 interp_ys    = []
+peaks_row1   = []   # (x, y, color) — resolved all at once after the loop
+
+if show_peaks:
+    peaks_row1.append((*_get_peak(fea_x, fea_y), "royalblue"))
 
 for i, (exp_df, name) in enumerate(zip(exp_dfs, exp_names)):
     color = COLORS[i % len(COLORS)]
@@ -263,9 +324,9 @@ for i, (exp_df, name) in enumerate(zip(exp_dfs, exp_names)):
         row=1, col=1,
     )
 
-    # ② Peak annotation on experiment
+    # ② Collect peak for annotation (placed after loop)
     if show_peaks:
-        add_peak_annotation(fig, exp_x, exp_y, color, row=1)
+        peaks_row1.append((*_get_peak(exp_x, exp_y), color))
 
     # Interpolate onto common grid
     exp_interp = np.interp(x_common, exp_x, exp_y)
@@ -308,6 +369,11 @@ for i, (exp_df, name) in enumerate(zip(exp_dfs, exp_names)):
         "S&G  P":       round(P, 4),
         "S&G  C":       round(C, 4),
     })
+
+# ── Resolve & place peak annotations (collision-aware) ────────────────────────
+
+if show_peaks:
+    _place_peak_annotations(fig, {1: peaks_row1})
 
 # ── ④ Std band & ① corridor ────────────────────────────────────────────────────
 
