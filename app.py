@@ -67,8 +67,42 @@ COLORS = [
 
 # ── UI ─────────────────────────────────────────────────────────────────────────
 
-st.title("Error Boy v1")
-st.caption("Upload your FEA results and experimental data, pick axes, and compare.")
+st.markdown("""
+<div style="display:flex; align-items:center; gap:24px; margin-bottom:0.5rem;">
+
+  <!-- Face logo -->
+  <div style="
+    font-family: 'Courier New', monospace;
+    line-height: 1.25;
+    font-size: 1.25rem;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #e0e0ff;
+    border-radius: 16px;
+    padding: 12px 18px;
+    border: 2px solid #4C72B0;
+    box-shadow: 0 0 12px rgba(76,114,176,0.4);
+    text-align: center;
+    min-width: 130px;
+    user-select: none;
+  ">
+    <!-- Hair: wild integral/partial derivative spikes -->
+    <div style="color:#f4a261; letter-spacing:4px; font-size:1rem;">∂∫∑∫∂</div>
+    <!-- Eyes (σ) and nose (Δ) -->
+    <div style="color:#e0e0ff; letter-spacing:2px;">(σ&nbsp;Δ&nbsp;σ)</div>
+    <!-- Lips: tilde -->
+    <div style="color:#f4a261; letter-spacing:3px;">&nbsp;~~~~~&nbsp;</div>
+  </div>
+
+  <!-- Title block -->
+  <div>
+    <h1 style="margin:0; padding:0; font-size:2.4rem;">Error Boy v1</h1>
+    <p style="margin:0; color:#888; font-size:0.95rem;">
+      Upload your FEA results and experimental data, pick axes, and compare.
+    </p>
+  </div>
+
+</div>
+""", unsafe_allow_html=True)
 
 SAMPLE_DIR = Path(__file__).parent
 
