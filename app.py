@@ -6,7 +6,7 @@ from plotly.subplots import make_subplots
 from pathlib import Path
 from scipy.signal import butter, sosfiltfilt
 
-st.set_page_config(page_title="FEA vs Experiment", layout="wide")
+st.set_page_config(page_title="Error Boy v1", layout="wide")
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ COLORS = [
 
 # ── UI ─────────────────────────────────────────────────────────────────────────
 
-st.title("FEA vs Experiment Dashboard")
+st.title("Error Boy v1")
 st.caption("Upload your FEA results and experimental data, pick axes, and compare.")
 
 SAMPLE_DIR = Path(__file__).parent
