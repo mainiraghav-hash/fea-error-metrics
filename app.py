@@ -191,6 +191,14 @@ with st.sidebar:
     st.subheader("Peak annotations")
     show_peaks = st.checkbox("Show peak annotations", value=True)
 
+    st.subheader("Legend position")
+    legend_pos = st.radio(
+        "Position",
+        ["Top left", "Top center", "Top right", "Bottom left", "Bottom center", "Bottom right", "Right side"],
+        index=0,
+        label_visibility="collapsed",
+    )
+
     st.subheader("CFC filter (SAE J211)")
     cfc_choice = st.selectbox(
         "Apply to experiment data",
@@ -349,11 +357,21 @@ if window_active:
 # Zero reference on residual plot
 fig.add_hline(y=0, line_dash="dash", line_color="lightgray", row=2, col=1)
 
+_legend_cfg = {
+    "Top left":      dict(orientation="h", x=0,   y=1.02, xanchor="left",   yanchor="bottom"),
+    "Top center":    dict(orientation="h", x=0.5, y=1.02, xanchor="center", yanchor="bottom"),
+    "Top right":     dict(orientation="h", x=1,   y=1.02, xanchor="right",  yanchor="bottom"),
+    "Bottom left":   dict(orientation="h", x=0,   y=-0.2, xanchor="left",   yanchor="top"),
+    "Bottom center": dict(orientation="h", x=0.5, y=-0.2, xanchor="center", yanchor="top"),
+    "Bottom right":  dict(orientation="h", x=1,   y=-0.2, xanchor="right",  yanchor="top"),
+    "Right side":    dict(orientation="v", x=1.02, y=1,   xanchor="left",   yanchor="top"),
+}
+
 fig.update_layout(
     height=740,
     template="plotly_white",
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-    margin=dict(t=80),
+    legend=_legend_cfg[legend_pos],
+    margin=dict(t=80, b=80),
 )
 fig.update_xaxes(title_text=fea_x_col, row=2, col=1)
 fig.update_yaxes(title_text=fea_y_col, row=1, col=1)
